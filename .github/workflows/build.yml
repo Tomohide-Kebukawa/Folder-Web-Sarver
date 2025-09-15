@@ -26,6 +26,15 @@ jobs:
             runner-label: macos-latest-arm64 # Apple Silicon Mac 用 (GitHub Actions runnerによっては設定が必要)
 
     steps:
+
+      # main.goがあるディレクトリに移動
+      - name: Change to Go project directory
+        run: cd Project
+  
+      # ビルド先のディレクトリを作成（念の為）
+      - name: Create build directory
+        run: mkdir -p Project/Build_App
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -34,21 +43,23 @@ jobs:
         with:
           go-version: '1.22.1' # 使用するGoのバージョンを指定
 
-      # Goモジュールを初期化するステップを追加
-      - name: Initialize Go modules
-        run: go mod init github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
+      # Goモジュールを初期化するステップ
+      # - name: Initialize Go modules
+      #   run: go mod init github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
         
+      # Intel/AMD64用にビルド
       - name: Build for Mac Intel (amd64)
         if: matrix.arch == 'Intel'
         run: |
           GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_Intel Project/main.go
 
+      # Apple Silicon用にビルド
       - name: Build for Mac Apple Silicon (arm64)
         if: matrix.arch == 'arm64'
         run: |
           GOOS=darwin GOARCH=arm64 go build -o Project/Build_App/FolderWebSarver_m1 Project/main.go
 
-      # ビルドしたファイルをArtifactsとして保存するステップ (任意)
+      # ビルドしたファイルをArtifactsとして保存
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
