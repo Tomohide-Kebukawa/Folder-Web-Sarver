@@ -52,5 +52,11 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: built-app-${{ matrix.arch }}
+          # name: built-app-${{ matrix.arch }}
+          # path: Project/Build_App/
+          name: built-app-arm64
           path: Project/Build_App/
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: true # 上書きの許可
+          include-hidden-files: false
