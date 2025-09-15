@@ -27,8 +27,8 @@ jobs:
 
       - name: Build Project for macOS
         run: |
-          cd Project
-          mkdir -p ../Build_App
+          # cd Project
+          # mkdir -p ../Build_App
           GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/AABBCC-amd64 ./Project
           GOOS=darwin GOARCH=arm64 go build -o Project/Build_App/AABBCC-arm64 ./Project
           # GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
