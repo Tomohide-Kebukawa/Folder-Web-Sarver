@@ -38,7 +38,7 @@ jobs:
       - name: Initialize Go modules
         run: go mod init your_module_name # your_module_name はプロジェクトに合わせて変更してください
 
-      - name: Build for Mac Intel (intel)
+      - name: Build for Mac Intel (intel=amd64)
         if: matrix.arch == 'intel'
         run: |
           GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_intel Project/main.go
@@ -54,7 +54,7 @@ jobs:
         with:
           # name: built-app-${{ matrix.arch }}
           # path: Project/Build_App/
-          name: built-app-arm64
+          name: FolderWebSarver_${{ matrix.arch }}
           path: Project/Build_App/
           if-no-files-found: warn
           compression-level: 6
