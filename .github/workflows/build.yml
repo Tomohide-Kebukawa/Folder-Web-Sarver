@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: intel-mac-app
-          path: Build\ App/AAAAAAAA
+          path: BuildApp/FolderWebSarver
 
   build-apple-silicon-mac:
     runs-on: macos-latest # Apple Silicon Mac環境を指定 (macOS runnerはRosetta 2経由でIntelアプリも実行可能ですが、ネイティブビルドが望ましい)
