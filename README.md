@@ -1,4 +1,4 @@
-# Folder-Web-Sarver [▶Jaoanese](./README_JP.md)
+# Folder-Web-Sarver [▶Japanese](./README_JP.md)
 Folder Web Server allows you to view the contents of multiple folders in your browser.
 
 ## Discription
