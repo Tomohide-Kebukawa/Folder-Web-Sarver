@@ -19,7 +19,7 @@ jobs:
         arch: [amd64, arm64] # Intel は amd64, Apple Silicon は arm64
         include:
           - os: macos-latest
-            arch: amd64
+            arch: intel
             runner-label: macos-latest # Intel Mac 用
           - os: macos-latest
             arch: arm64
@@ -38,8 +38,8 @@ jobs:
       - name: Initialize Go modules
         run: go mod init your_module_name # your_module_name はプロジェクトに合わせて変更してください
 
-      - name: Build for Mac Intel (amd64)
-        if: matrix.arch == 'amd64'
+      - name: Build for Mac Intel (intel)
+        if: matrix.arch == 'intel'
         run: |
           GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_intel Project/main.go
 
