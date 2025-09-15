@@ -1,25 +1,25 @@
 name: Build Go Application
 
+# 作成されるアプリケーション
+# BuildApp/FolderWebSarver
+
 on:
   push:
     branches:
-      - main # mainブランチへのプッシュをトリガーにする
+      - main # mainブランチへのプッシュでトリガー
 
 jobs:
   build:
-    runs-on: ubuntu-latest # ビルドを実行する環境を指定
+    runs-on: ubuntu-latest # macOSのビルドジョブを別途設定します
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4 # リポジトリのコードを取得
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.22.1' # 使用するGoのバージョンを指定
-
-    - name: Create build directory
-      run: mkdir -p BuildApp # ビルド用ディレクトリを作成
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
 
 jobs:
   build-intel-mac:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Build for Intel Mac
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o BuildApp/FolderWebSarver main.go
+          GOOS=darwin GOARCH=amd64 go build -o Build\ App/AAAAAAAA main.go
 
       - name: Upload Artifacts (Intel)
         uses: actions/upload-artifact@v4
@@ -63,10 +63,4 @@ jobs:
         with:
           name: apple-silicon-mac-app
           path: BuildApp/FolderWebSarver
-
-    # ビルドされたファイルをアーティファクトとして保存する
-    # - name: Upload build artifacts
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: build-artifacts
-    #     path: Build\ App/FolderWebSarver
+          
