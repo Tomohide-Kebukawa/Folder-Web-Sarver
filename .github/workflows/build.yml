@@ -21,7 +21,6 @@ jobs:
         with:
           go-version: '1.22.1' # 使用するGoのバージョンを指定してください
 
-jobs:
   build-intel-mac:
     runs-on: macos-latest # Intel Mac環境を指定 (macOS runnerはIntelベースです)
     steps:
