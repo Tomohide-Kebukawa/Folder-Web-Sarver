@@ -1,41 +1,66 @@
 name: Build Go Application
 
+# 作成されるアプリケーション
+# BuildApp/FolderWebSarver
+
 on:
   push:
     branches:
-      - main # mainブランチへのプッシュをトリガーにする
+      - main # mainブランチへのプッシュでトリガー
 
 jobs:
   build:
-    runs-on: ubuntu-latest # ビルドを実行する環境を指定
+    runs-on: ubuntu-latest # macOSのビルドジョブを別途設定します
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3 # リポジトリのコードを取得
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.20' # 使用するGoのバージョンを指定
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
 
-    - name: Create build directory
-      run: mkdir -p Build\ App # ビルド用ディレクトリを作成
+jobs:
+  build-intel-mac:
+    runs-on: macos-latest # Intel Mac環境を指定 (macOS runnerはIntelベースです)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Build for Mac Intel (amd64)
-      run: |
-        GOOS=darwin GOARCH=amd64 go build -o "Build App/FolderWebSarver" ./...
-      env:
-        CGO_ENABLED: 0 # クロスコンパイルでCGOを無効にする場合
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
 
-    - name: Build for Mac Apple Silicon (arm64)
-      run: |
-        GOOS=darwin GOARCH=arm64 go build -o "Build App/FolderWebSarver" ./...
-      env:
-        CGO_ENABLED: 0
+      - name: Build for Intel Mac
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -o Build\ App/AAAAAAAA main.go
 
-    # ビルドされたファイルをアーティファクトとして保存する
-    # - name: Upload build artifacts
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: build-artifacts
-    #     path: Build\ App/FolderWebSarver
+      - name: Upload Artifacts (Intel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-mac-app
+          path: BuildApp/FolderWebSarver
+
+  build-apple-silicon-mac:
+    runs-on: macos-latest # Apple Silicon Mac環境を指定 (macOS runnerはRosetta 2経由でIntelアプリも実行可能ですが、ネイティブビルドが望ましい)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
+
+      - name: Build for Apple Silicon
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -o BuildApp/FolderWebSarver main.go
+
+      - name: Upload Artifacts (Apple Silicon)
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-silicon-mac-app
+          path: BuildApp/FolderWebSarver
+          
