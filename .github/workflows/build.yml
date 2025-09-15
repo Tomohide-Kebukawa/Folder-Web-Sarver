@@ -4,33 +4,55 @@
 # Build_App/FolderWebSarver
 
 # .github/workflows/build.yml
-name: Build Go Binaries (Debug)
+
+name: Build Project
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: macos-latest   # ← macOS ランナーで実行 (lipo 使うため)
+    runs-on: macos-15-arm64
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    # リポジトリのチェックアウト
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.1'
+    # Go のセットアップ
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.22.1
 
-      - name: Build binaries
-        run: |
-          cd Project   # go.mod があるディレクトリ
-          # mkdir -p ../Build_App
-          GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64 main.go
-          GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64 main.go
-          lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
+    # ビルド
+    - name: Build macOS universal binary
+      run: |
+        cd Project                         # go.mod があるディレクトリに移動
+        mkdir -p ../Build_App
+
+        # amd64 ビルド
+        GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
+
+        # arm64 ビルド
+        GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64
+
+        # lipo でユニバーサルバイナリ作成
+        lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
+
+        # 出力確認
+        ls -lh ../Build_App
+
+      # - name: Build binaries
+      #   run: |
+      #     cd Project   # go.mod があるディレクトリ
+      #     # mkdir -p ../Build_App
+      #     GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64 main.go
+      #     GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64 main.go
+      #     lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
 
       # - name: Build binaries
       #   run: |
