@@ -1,4 +1,4 @@
-name: Build Go Application
+name: Build Go App for macOS
 
 # 作成されるアプリケーション
 # Build_App/FolderWebSarver
@@ -8,64 +8,33 @@ name: Build Go Application
 on:
   push:
     branches:
-      - main # mainブランチへのプッシュでトリガー
+      - main
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, macos-latest] # Mac Intel と Apple Silicon 用に複数回実行
-        arch: [amd64, arm64] # Intel は amd64, Apple Silicon は arm64
-        include:
-          - os: macos-latest
-            arch: intel
-            runner-label: macos-latest # Intel Mac 用
-          - os: macos-latest
-            arch: arm64
-            runner-label: macos-latest-arm64 # Apple Silicon Mac 用 (GitHub Actions runnerによっては設定が必要)
+    runs-on: ubuntu-latest
 
     steps:
-
-      # main.goがあるディレクトリに移動
-      - name: Change to Go project directory
-        run: cd Project
-  
-      # ビルド先のディレクトリを作成（念の為）
-      - name: Create build directory
-        run: mkdir -p Project/Build_App
-
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.22.1' # 使用するGoのバージョンを指定
+          go-version: '1.22.1'
 
-      # Goモジュールを初期化するステップ
-      # - name: Initialize Go modules
-      #   run: go mod init github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
-        
-      # Intel/AMD64用にビルド
-      - name: Build for Mac Intel (amd64)
-        if: matrix.arch == 'Intel'
+      - name: Build for macOS Intel (amd64)
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_Intel Project/main.go
+          mkdir -p Project/Build_App
+          GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/AABBCC-amd64 ./Project/main.go
 
-      # Apple Silicon用にビルド
-      - name: Build for Mac Apple Silicon (arm64)
-        if: matrix.arch == 'arm64'
+      - name: Build for macOS Apple Silicon (arm64)
         run: |
-          GOOS=darwin GOARCH=arm64 go build -o Project/Build_App/FolderWebSarver_m1 Project/main.go
+          GOOS=darwin GOARCH=arm64 go build -o Project/Build_App/AABBCC-arm64 ./Project/main.go
 
-      # ビルドしたファイルをArtifactsとして保存
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FolderWebSarver_${{ matrix.arch }}
-          path: Project/Build_App/
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: true # 上書きの許可
-          include-hidden-files: false
+          name: macOS-binaries
+          path: Project/Build_App/*
+
