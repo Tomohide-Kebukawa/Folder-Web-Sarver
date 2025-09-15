@@ -36,7 +36,7 @@ jobs:
 
       # Goモジュールを初期化するステップを追加
       - name: Initialize Go modules
-        run: go mod init github.com/Tomohide-Kebukawa/Folder-Web-Server
+        run: go mod init github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
         
       - name: Build for Mac Intel (amd64)
         if: matrix.arch == 'Intel'
