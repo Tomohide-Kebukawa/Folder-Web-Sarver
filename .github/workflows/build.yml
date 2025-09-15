@@ -3,6 +3,8 @@ name: Build Go Application
 # 作成されるアプリケーション
 # BuildApp/FolderWebSarver
 
+# .github/workflows/build.yml
+
 on:
   push:
     branches:
@@ -10,56 +12,45 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # macOSのビルドジョブを別途設定します
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, macos-latest] # Mac Intel と Apple Silicon 用に複数回実行
+        arch: [amd64, arm64] # Intel は amd64, Apple Silicon は arm64
+        include:
+          - os: macos-latest
+            arch: amd64
+            runner-label: macos-latest # Intel Mac 用
+          - os: macos-latest
+            arch: arm64
+            runner-label: macos-latest-arm64 # Apple Silicon Mac 用 (GitHub Actions runnerによっては設定が必要)
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
+          go-version: '1.22.1' # 使用するGoのバージョンを指定
 
-  build-intel-mac:
-    runs-on: macos-latest # Intel Mac環境を指定 (macOS runnerはIntelベースです)
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # Goモジュールを初期化するステップを追加
+      - name: Initialize Go modules
+        run: go mod init your_module_name # your_module_name はプロジェクトに合わせて変更してください
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
-
-      - name: Build for Intel Mac
+      - name: Build for Mac Intel (amd64)
+        if: matrix.arch == 'amd64'
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o Build\ App/AAAAAAAA main.go
+          GOOS=darwin GOARCH=amd64 go build -o BuildApp/FolderWebSarver_intel main.go
 
-      - name: Upload Artifacts (Intel)
+      - name: Build for Mac Apple Silicon (arm64)
+        if: matrix.arch == 'arm64'
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -o BuildApp/FolderWebSarver_m1 main.go
+
+      # ビルドしたファイルをArtifactsとして保存するステップ (任意)
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: intel-mac-app
-          path: BuildApp/FolderWebSarver
-
-  build-apple-silicon-mac:
-    runs-on: macos-latest # Apple Silicon Mac環境を指定 (macOS runnerはRosetta 2経由でIntelアプリも実行可能ですが、ネイティブビルドが望ましい)
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.1' # 使用するGoのバージョンを指定してください
-
-      - name: Build for Apple Silicon
-        run: |
-          GOOS=darwin GOARCH=arm64 go build -o BuildApp/FolderWebSarver main.go
-
-      - name: Upload Artifacts (Apple Silicon)
-        uses: actions/upload-artifact@v4
-        with:
-          name: apple-silicon-mac-app
-          path: BuildApp/FolderWebSarver
-          
+          name: built-app-${{ matrix.arch }}
+          path: BuildApp/
