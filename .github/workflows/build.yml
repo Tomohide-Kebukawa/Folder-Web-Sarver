@@ -25,14 +25,22 @@ jobs:
           go-version: '1.22'
 
 
-      - name: Build binaries
+      - name: Build Project for macOS
         run: |
-          mkdir -p Project/Build_App
           cd Project
-          GOOS=darwin GOARCH=amd64 go build -o Build_App/AABBCC-amd64
-          GOOS=darwin GOARCH=arm64 go build -o Build_App/AABBCC-arm64
-          lipo -create -output Build_App/AABBCC Build_App/AABBCC-amd64 Build_App/AABBCC-arm64
-          ls -lh Build_App
+          mkdir -p ../Build_App
+          GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
+          GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64
+          lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
+
+      # - name: Build binaries
+      #   run: |
+      #     mkdir -p Project/Build_App
+      #     cd Project
+      #     GOOS=darwin GOARCH=amd64 go build -o Build_App/AABBCC-amd64
+      #     GOOS=darwin GOARCH=arm64 go build -o Build_App/AABBCC-arm64
+      #     lipo -create -output Build_App/AABBCC Build_App/AABBCC-amd64 Build_App/AABBCC-arm64
+      #     ls -lh Build_App
 
 
 
