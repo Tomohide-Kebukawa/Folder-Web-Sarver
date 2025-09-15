@@ -1,7 +1,8 @@
 # Folder-Web-Sarver
 Folder Web Server allows you to view the contents of multiple folders in your browser.
 
-> [!IMPORTANT]for macOS
+> [!IMPORTANT]
+> for macOS
 
 > [Japanese README](./README_JP.md)
  
