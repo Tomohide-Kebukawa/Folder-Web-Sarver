@@ -1,0 +1,41 @@
+name: Build Go Application
+
+on:
+  push:
+    branches:
+      - main # mainブランチへのプッシュをトリガーにする
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # ビルドを実行する環境を指定
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3 # リポジトリのコードを取得
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20' # 使用するGoのバージョンを指定
+
+    - name: Create build directory
+      run: mkdir -p Build\ App # ビルド用ディレクトリを作成
+
+    - name: Build for Mac Intel (amd64)
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -o "Build App/FolderWebSarver" ./...
+      env:
+        CGO_ENABLED: 0 # クロスコンパイルでCGOを無効にする場合
+
+    - name: Build for Mac Apple Silicon (arm64)
+      run: |
+        GOOS=darwin GOARCH=arm64 go build -o "Build App/FolderWebSarver" ./...
+      env:
+        CGO_ENABLED: 0
+
+    # ビルドされたファイルをアーティファクトとして保存する
+    # - name: Upload build artifacts
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: build-artifacts
+    #     path: Build\ App/FolderWebSarver
