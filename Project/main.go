@@ -299,7 +299,7 @@ func main() {
 								// ignoresリストに含まれていれば除外
 								if !entry.IsDir() {
 									if ignored, reason := isIgnored(entry.Name(), config.Ignores); ignored {
-										log.Printf("除外されたパス: %s (理由: %s)", filepath.Join(parentDir, entry.Name()), reason)
+										log.Printf("Excluded Path: %s (Reason: %s)", filepath.Join(parentDir, entry.Name()), reason) //除外されたときのログ
 										continue
 									}
 								}
@@ -386,7 +386,7 @@ func main() {
 					for _, file := range files {
 						if ignored, reason := isIgnored(file.Name(), config.Ignores); ignored {
 							fullPath := filepath.Join(targetBasePath, file.Name())
-							log.Printf("除外されたパス: %s (理由: %s)", fullPath, reason)
+							log.Printf("Excluded Path: %s (Reason: %s)", fullPath, reason) //除外されたときのログ
 							continue
 						}
 						
@@ -442,6 +442,6 @@ func main() {
 	
 	// Webサーバーを起動します。
 	port := fmt.Sprintf(":%d", config.Config.Server.Port)
-	fmt.Printf("Webサーバーをポート%sで起動します...\n", port)
+	fmt.Printf("Web Server Start (port:%s)...\n", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }
