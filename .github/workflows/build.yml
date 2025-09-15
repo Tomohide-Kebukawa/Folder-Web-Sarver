@@ -36,12 +36,12 @@ jobs:
 
       # Goモジュールを初期化するステップを追加
       - name: Initialize Go modules
-        run: go mod init your_module_name # your_module_name はプロジェクトに合わせて変更してください
-
-      - name: Build for Mac Intel (intel=amd64)
-        if: matrix.arch == 'intel'
+        run: go mod init https://github.com/Tomohide-Kebukawa/Folder-Web-Server
+        
+      - name: Build for Mac Intel (amd64)
+        if: matrix.arch == 'Intel'
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_intel Project/main.go
+          GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/FolderWebSarver_Intel Project/main.go
 
       - name: Build for Mac Apple Silicon (arm64)
         if: matrix.arch == 'arm64'
@@ -52,8 +52,6 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          # name: built-app-${{ matrix.arch }}
-          # path: Project/Build_App/
           name: FolderWebSarver_${{ matrix.arch }}
           path: Project/Build_App/
           if-no-files-found: warn
