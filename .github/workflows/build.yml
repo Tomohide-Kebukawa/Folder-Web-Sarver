@@ -1,9 +1,10 @@
-name: Build Go Universal Binary for macOS
+# name: Build Go Universal Binary for macOS
 
 # 作成されるアプリケーション
 # Build_App/FolderWebSarver
 
 # .github/workflows/build.yml
+name: Build Go Binaries (Debug)
 
 on:
   push:
@@ -12,7 +13,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest   # 重要（lipoはmacOS専用）
+    runs-on: macos-latest   # ← macOS ランナーで実行 (lipo 使うため)
 
     steps:
       - name: Checkout repository
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.1'
+          go-version: '1.22'
 
       - name: Build amd64
         run: |
@@ -29,16 +30,11 @@ jobs:
           GOOS=darwin GOARCH=amd64 go build -v -o Project/Build_App/AABBCC-amd64 ./Project/main.go
           echo "=== after amd64 build ==="
           ls -lh Project/Build_App
+          file Project/Build_App/AABBCC-amd64
 
       - name: Build arm64
         run: |
           GOOS=darwin GOARCH=arm64 go build -v -o Project/Build_App/AABBCC-arm64 ./Project/main.go
           echo "=== after arm64 build ==="
           ls -lh Project/Build_App
-
-      - name: Lipo merge
-        run: |
-          lipo -create -output Project/Build_App/AABBCC \
-            Project/Build_App/AABBCC-amd64 Project/Build_App/AABBCC-arm64
-          echo "=== after lipo ==="
-          ls -lh Project/Build_App
+          file Project/Build_App/AABBCC-arm64
