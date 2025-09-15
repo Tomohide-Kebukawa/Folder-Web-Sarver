@@ -29,9 +29,11 @@ jobs:
         run: |
           cd Project
           mkdir -p ../Build_App
-          GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
-          GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64
-          lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
+          GOOS=darwin GOARCH=amd64 go build -o Project/Build_App/AABBCC-amd64 github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
+          GOOS=darwin GOARCH=arm64 go build -o Project/Build_App/AABBCC-arm64 github.com/Tomohide-Kebukawa/Folder-Web-Server/Project
+          # GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
+          # GOOS=darwin GOARCH=arm64 go build -o ../Build_App/AABBCC-arm64
+          # lipo -create -output ../Build_App/AABBCC ../Build_App/AABBCC-amd64 ../Build_App/AABBCC-arm64
 
       # - name: Build binaries
       #   run: |
