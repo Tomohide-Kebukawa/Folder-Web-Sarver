@@ -15,7 +15,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # ビルドを実行する環境はLinux
+    # runs-on: ubuntu-latest # ビルドを実行する環境はLinux
+    runs-on: macos-latest # ビルドを実行する環境はlipo使うのでmacOS
     
     steps:
     # リポジトリのチェックアウト
