@@ -15,8 +15,8 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15-arm64
-
+    runs-on: ubuntu-latest # ビルドを実行する環境はLinux
+    
     steps:
     # リポジトリのチェックアウト
     - name: Checkout repository
@@ -32,7 +32,7 @@ jobs:
     - name: Build macOS universal binary
       run: |
         cd Project                         # go.mod があるディレクトリに移動
-        mkdir -p ../Build_App
+        # mkdir -p ../Build_App
 
         # amd64 ビルド
         GOOS=darwin GOARCH=amd64 go build -o ../Build_App/AABBCC-amd64
