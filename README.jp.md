@@ -106,7 +106,7 @@ folderで表示されたオブジェクトリストから画像がクリック�
 ファイルとフォルダーのアイコンは、Finderと同じに見えるようにする。
 そのために、アイコンを取り出すCLIラッパーをSwiftで作成した。
 
-> [Project getIcon](./Project/Project%20getIcon)
+> [Project getIcon](./Project/Project_getIcon)
 
 呼び出しは次のように行う。
 
