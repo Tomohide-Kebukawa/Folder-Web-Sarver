@@ -1,3 +1,5 @@
+// Goからの呼び出しテスト用
+
 package main
 
 import (
