@@ -85,7 +85,7 @@ func isImageFile(path string) bool {
 
 // getIconBase64は、getIconツールを実行してBase64エンコードされたPNGを返します。
 func getIconBase64(filePath string) (string, error) {
-	cmd := exec.Command("./getIcon", filePath)
+	cmd := exec.Command("./Libraries/getIcon", filePath)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get icon for %s: %v", filePath, err)
