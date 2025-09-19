@@ -14,6 +14,7 @@ import (
 	"sort"
 	"encoding/base64"
 	"regexp"
+	"net/url"
 )
 
 // ServerConfigはsettings.jsonの構造を定義します。
@@ -30,16 +31,17 @@ type ServerConfig struct {
 
 // Objectはファイルまたはフォルダーの情報を保持します。
 type Object struct {
-	Name string
+	WS_Name string
 	Type string // "folder" or "file"
-	Link string // Added for custom links
+	WS_Link string // Added for custom links
 	IconPath template.URL // Custom icon path
+	WS_IconPath template.URL // Custom icon path
 }
 
 // TemplateDataはテンプレートに渡すデータを定義します。
 type TemplateData struct {
 	WS_Title string
-	WS_Path  string
+	WS_Path string
 	WS_Objects []Object
 }
 
@@ -48,8 +50,14 @@ type ImageTemplateData struct {
 	WS_Title string
 	WS_Path string
 	CurrentIndex int
-	ImagePaths []string
+	WS_ImagePaths []string
 }
+
+// NotFoundDataは404テンプレートに渡すデータを定義します。
+type NotFoundData struct {
+	WS_Path string
+}
+
 
 // getRequestedPathはリクエストされたパスを正規化し、セキュリティ上の問題を回避します。
 func getRequestedPath(r *http.Request) string {
@@ -141,6 +149,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("imageR2Lテンプレートファイルのパースに失敗しました: %v", err)
 	}
+	// 404テンプレートを追加
+	err404Tmpl, err := template.ParseFiles("./templates/404.html")
+	if err != nil {
+		log.Fatalf("404テンプレートファイルのパースに失敗しました: %v", err)
+	}
 
 
 	// サーバー起動時にフォルダパスを解決し、マップにキャッシュ
@@ -163,7 +176,9 @@ func main() {
 			}
 		} else {
 			// ルートフォルダに存在しない場合は404
-			http.Error(w, "Not Found", http.StatusNotFound)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 			return
 		}
 		
@@ -171,7 +186,9 @@ func main() {
 		base64Data, err := getIconBase64(fullPath)
 		if err != nil {
 			log.Printf("アイコンの取得に失敗しました: %v", err)
-			http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 			return
 		}
 		
@@ -180,7 +197,9 @@ func main() {
 		data, err := base64.StdEncoding.DecodeString(base64Data)
 		if err != nil {
 			log.Printf("Base64のデコードに失敗しました: %v", err)
-			http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 			return
 		}
 		w.Write(data)
@@ -215,7 +234,9 @@ func main() {
 					base64Data, err := getIconBase64(fullPath)
 					if err != nil {
 						log.Printf("アイコンの取得に失敗しました: %v", err)
-						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+						w.WriteHeader(http.StatusInternalServerError)
+						err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 						return
 					}
 					
@@ -224,7 +245,9 @@ func main() {
 					data, err := base64.StdEncoding.DecodeString(base64Data)
 					if err != nil {
 						log.Printf("Base64のデコードに失敗しました: %v", err)
-						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+						w.WriteHeader(http.StatusInternalServerError)
+						err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 						return
 					}
 					w.Write(data)
@@ -232,7 +255,9 @@ func main() {
 				}
 			}
 			// ファイル/フォルダが存在しない、または無効なリクエストの場合
-			http.Error(w, "Not Found", http.StatusNotFound)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusNotFound)
+			err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 			return
 		}
 		
@@ -248,17 +273,19 @@ func main() {
 			for folderName := range resolvedFolders {
 				// ignoresリストに含まれていれば除外
 				if ignored, reason := isIgnored(folderName, config.Ignores); ignored {
-					log.Printf("除外されたパス: %s (理由: %s)", resolvedFolders[folderName], reason)
+					log.Printf("Excluded Path: %s (Reason: %s)", resolvedFolders[folderName], reason)
 					continue
 				}
+				
+				encodedLink := url.PathEscape(folderName) + "/"
+				iconPath := template.URL(fmt.Sprintf("/icon/%s/", url.PathEscape(folderName)))
 
-				obj := Object{Name: folderName + "/", Type: "folder", Link: folderName + "/"}
-				obj.IconPath = template.URL("/" + obj.Link + ".icon")
+				obj := Object{WS_Name: folderName, Type: "folder", WS_Link: encodedLink, IconPath: iconPath}
 				objects = append(objects, obj)
 			}
 			// オブジェクトを名前でソート
 			sort.Slice(objects, func(i, j int) bool {
-				return objects[i].Name < objects[j].Name
+				return objects[i].WS_Name < objects[j].WS_Name
 			})
 		} else {
 			// 特定のフォルダーへのアクセスの場合
@@ -290,7 +317,9 @@ func main() {
 							parentDir := filepath.Dir(originalPath)
 							dirEntries, err := os.ReadDir(parentDir)
 							if err != nil {
-								http.Error(w, "ディレクトリの読み込みができません", http.StatusInternalServerError)
+								w.Header().Set("Content-Type", "text/html; charset=utf-8")
+								w.WriteHeader(http.StatusInternalServerError)
+								err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 								return
 							}
 							
@@ -299,7 +328,7 @@ func main() {
 								// ignoresリストに含まれていれば除外
 								if !entry.IsDir() {
 									if ignored, reason := isIgnored(entry.Name(), config.Ignores); ignored {
-										log.Printf("Excluded Path: %s (Reason: %s)", filepath.Join(parentDir, entry.Name()), reason) //除外されたときのログ
+										log.Printf("Ignores Path: %s (Reason: %s)", filepath.Join(parentDir, entry.Name()), reason)
 										continue
 									}
 								}
@@ -317,7 +346,7 @@ func main() {
 							var imagePaths []string
 							currentIndex := -1
 							for idx, entry := range imageFileEntries {
-								fileServerPath := filepath.Join("/", pathParts[0], strings.TrimPrefix(filepath.Join(strings.Join(pathParts[1:len(pathParts)-1], "/"), entry.Name()), "/"))
+								fileServerPath := url.PathEscape(entry.Name())
 								imagePaths = append(imagePaths, fileServerPath)
 								if entry.Name() == filepath.Base(originalPath) {
 									currentIndex = idx
@@ -328,43 +357,39 @@ func main() {
 								WS_Title: filepath.Base(originalPath),
 								WS_Path: r.URL.Path,
 								CurrentIndex: currentIndex,
-								ImagePaths: imagePaths,
+								WS_ImagePaths: imagePaths, 
 							}
 							
 							w.Header().Set("Content-Type", "text/html; charset=utf-8")
+							// _R2L_オプションファイルが存在する場合はimageR2L.html、そうでなければimage.htmlを返す
 							if errR2L == nil {
 								if err := imageR2LTmpl.Execute(w, imageData); err != nil {
 									log.Printf("テンプレートの実行に失敗しました: %v", err)
-									http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+									w.Header().Set("Content-Type", "text/html; charset=utf-8")
+									w.WriteHeader(http.StatusInternalServerError)
+									err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 								}
 							} else {
 								if err := imageTmpl.Execute(w, imageData); err != nil {
 									log.Printf("テンプレートの実行に失敗しました: %v", err)
-									http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+									w.Header().Set("Content-Type", "text/html; charset=utf-8")
+									w.WriteHeader(http.StatusInternalServerError)
+									err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 								}
 							}
 							return
 						}
 					}
-					http.Error(w, fmt.Sprintf("404 Not Found: %s", r.URL.Path), http.StatusNotFound)
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(http.StatusNotFound)
+					err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 					return
 				}
 				
 				// index.html or index.htmへの直接アクセスを処理
-				if strings.HasSuffix(strings.ToLower(requestedPath), "index.html") || strings.HasSuffix(strings.ToLower(requestedPath), "index.htm") {
-					// ファイルが存在すれば直接提供
-					if info.Mode().IsRegular() {
-						file, err := os.Open(targetBasePath)
-						if err != nil {
-							http.Error(w, "ファイルのオープンに失敗しました", http.StatusInternalServerError)
-							return
-						}
-						defer file.Close()
-						
-						// リダイレクトを防ぐためにhttp.ServeContentを使用
-						http.ServeContent(w, r, filepath.Base(targetBasePath), info.ModTime(), file)
-						return
-					}
+				if info.Mode().IsRegular() && (strings.HasSuffix(strings.ToLower(requestedPath), "index.html") || strings.HasSuffix(strings.ToLower(requestedPath), "index.htm")) {
+					http.ServeFile(w, r, targetBasePath)
+					return
 				}
 				
 				// リクエストされたパスがファイルであり、画像テンプレートでない場合
@@ -378,49 +403,58 @@ func main() {
 					files, err := os.ReadDir(targetBasePath)
 					if err != nil {
 						log.Printf("フォルダの読み込みに失敗しました: %v", err)
-						http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+						w.WriteHeader(http.StatusInternalServerError)
+						err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 						return
 					}
-
 					
 					for _, file := range files {
 						if ignored, reason := isIgnored(file.Name(), config.Ignores); ignored {
 							fullPath := filepath.Join(targetBasePath, file.Name())
-							log.Printf("Excluded Path: %s (Reason: %s)", fullPath, reason) //除外されたときのログ
+							log.Printf("Excluded Path: %s (Reason: %s)", fullPath, reason)
 							continue
 						}
 						
-						obj := Object{Name: file.Name()}
+						obj := Object{WS_Name: file.Name()}
+						
+						// URLエンコード
+						encodedName := url.PathEscape(file.Name())
+						obj.WS_Link = encodedName
 						
 						if file.IsDir() {
-							obj.Link = file.Name() + "/"
+							obj.WS_Link = obj.WS_Link + "/"
 							obj.Type = "folder"
-							obj.IconPath = template.URL(r.URL.Path + obj.Link + ".icon")
+							obj.WS_IconPath = template.URL(obj.WS_Link + ".icon")
+							obj.IconPath = template.URL(fmt.Sprintf("/icon/%s/%s", requestedPath, obj.WS_Link))
 						} else {
 							obj.Type = "file"
+							obj.WS_IconPath = template.URL(obj.WS_Link + ".icon")
 							if isImageFile(filepath.Join(targetBasePath, file.Name())) {
-								obj.Link = file.Name() + ".image.html"
-							} else {
-								obj.Link = file.Name()
+								obj.WS_Link = obj.WS_Link + ".image.html"
 							}
-							obj.IconPath = template.URL(r.URL.Path + file.Name() + ".icon")
+							obj.IconPath = template.URL(fmt.Sprintf("/icon/%s/%s", requestedPath, obj.WS_Link))
 						}
 						objects = append(objects, obj)
 					}
 					// オブジェクトを名前でソート
 					sort.Slice(objects, func(i, j int) bool {
-						return objects[i].Name < objects[j].Name
+						return objects[i].WS_Name < objects[j].WS_Name
 					})
 					title = filepath.Base(targetBasePath)
 					tmplToExecute = folderTmpl
 				} else {
 					// その他、シンボリックリンクなど未対応のタイプ
-					http.Error(w, fmt.Sprintf("サポートされていないファイルの種類: %s", r.URL.Path), http.StatusForbidden)
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(http.StatusForbidden)
+					err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 					return
 				}
 			} else {
 				// ルートフォルダーに存在しないパスの場合、404エラー
-				http.Error(w, fmt.Sprintf("404 Not Found: %s", r.URL.Path), http.StatusNotFound)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusNotFound)
+				err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 				return
 			}
 		}
@@ -428,7 +462,7 @@ func main() {
 		// テンプレートに渡すデータを作成します。
 		data := TemplateData{
 			WS_Title: title,
-			WS_Path:  r.URL.Path,
+			WS_Path: r.URL.Path,
 			WS_Objects: objects,
 		}
 
@@ -436,7 +470,9 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmplToExecute.Execute(w, data); err != nil {
 			log.Printf("テンプレートの実行に失敗しました: %v", err)
-			http.Error(w, "内部サーバーエラー", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			err404Tmpl.Execute(w, NotFoundData{WS_Path: r.URL.Path})
 		}
 	})
 	
