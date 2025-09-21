@@ -118,3 +118,19 @@ iconサイズは省略可能。
 省略時にはデフォルトサイズの24になる。
 
 返される値は、当該パスのアイコンをサイズで示した正方形の`png`に変換した画像を`Base64`でエンコードした文字列。
+
+## Goファイル構成
+
+```
+Project_Server
+├── go.mod
+├── cmd
+│	└─server
+│		└──main.go
+└── internal
+	├─ common.go
+	├─ icon.go
+	├─ image.go
+	├─ movie.go
+	└─ object.go
+```
