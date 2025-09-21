@@ -45,10 +45,10 @@
 </head>
 <body>
     <h1>{{.WS_Title}}</h1>
-    <p>Path: {{.WS_Path}}</p>
+    <p>Path: /</p>
     <ul>
         {{range .WS_Objects}}
-        <li><a href="./{{.WS_Link}}">{{.WS_Name}}</a></li>
+        <li><a href="{{.WS_Link}}">{{.WS_Name}}</a></li>
         {{end}}
     </ul>
 </body>
