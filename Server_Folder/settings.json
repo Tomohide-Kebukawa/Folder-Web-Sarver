@@ -14,7 +14,7 @@
 		"/VolumeB/Folder-3/"
 	],
 	"ignores": [
-		"\\..*",
-		"Icon"
+		"^\\..*",
+		"^Icon"
 	]
 }
