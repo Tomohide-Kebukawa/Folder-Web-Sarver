@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"regexp"
 )
 
 // ResolvedFoldersを初期化するためのヘルパー関数
@@ -32,7 +33,8 @@ func ResolveFolders(folders []string) map[string]string {
 // isIgnoredは指定されたファイル名が無視リストに含まれているかどうかをチェックします。
 func isIgnored(name string, ignores []string) (bool, string) {
 	for _, pattern := range ignores {
-		if matched, err := filepath.Match(pattern, name); err == nil && matched {
+//		if matched, err := filepath.Match(pattern, name); err == nil && matched {
+		if matched, err := regexp.MatchString(pattern, name); err == nil && matched {
 			return true, fmt.Sprintf("パターン '%s' に一致しました", pattern)
 		}
 	}
@@ -100,11 +102,6 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 				log.Printf("ファイルの送信: '%s'", fullPath)
 				http.ServeFile(w, r, fullPath)
 				return
-//				log.Printf("ファイルの読み込みに失敗しました: '%s' %v", fullPath, err)
-//				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-//				w.WriteHeader(http.StatusNotFound)
-//				err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
-//				return
 			}
 			
 			// フォルダの内容を読み込み

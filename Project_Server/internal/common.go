@@ -21,6 +21,7 @@ type ServerConfig struct {
 			Port int `json:"port"`
 		} `json:"server"`
 		Templates map[string]string `json:"templates"`
+		Temporary string
 	} `json:"config"`
 	Folders []string `json:"folders"`
 	Ignores []string `json:"ignores"`

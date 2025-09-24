@@ -87,7 +87,13 @@ func main() {
 			return
 		}
 
-		// それ以外のすべてのリクエストはfolder.goのハンドラに渡す
+		// hls/で始まるリクエストはmovie.goのハンドラにリダイレクト
+		if strings.HasPrefix(requestedPath, "hls/") {
+			internal.HandleMovieStreaming(resolvedFolders, &config, err404Tmpl)(w, r)
+			return
+		}
+
+		// それ以外のすべてのリクエストはobject.goのハンドラに渡す
 		internal.HandleObjectRequest(resolvedFolders, &config, indexTmpl, folderTmpl, err404Tmpl)(w, r)
 	})
 
