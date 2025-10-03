@@ -59,6 +59,7 @@ type ImageData struct {
 	WS_BaseURL		template.URL
 	WS_CurrentIndex	int
 	WS_ImagePaths	[]string
+	WS_ImageFile	string
 }
 
 // VideoTemplateDataは動画表示テンプレートに渡されるデータを定義します。

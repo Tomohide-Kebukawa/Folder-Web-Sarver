@@ -44,6 +44,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("imageR2Lテンプレートファイルのパースに失敗しました: %v", err)
 	}
+	image360vrTmpl, err := template.ParseFiles(config.Config.Templates["image360VR"])
+	if err != nil {
+		log.Fatalf("image360VRテンプレートファイルのパースに失敗しました: %v", err)
+	}
 	// movieテンプレートを追加
 	movieTmpl, err := template.ParseFiles(config.Config.Templates["movie"])
 	if err != nil {
@@ -71,7 +75,7 @@ func main() {
 
 		// .image.htmlで終わるリクエストはimage.goのハンドラにリダイレクト
 		if strings.HasSuffix(requestedPath, ".image.html") {
-			internal.HandleImageRequest(resolvedFolders, &config, imageTmpl, imageR2LTmpl, err404Tmpl)(w, r)
+			internal.HandleImageRequest(resolvedFolders, &config, imageTmpl, imageR2LTmpl, image360vrTmpl, err404Tmpl)(w, r)
 			return
 		}
 
@@ -87,11 +91,18 @@ func main() {
 			return
 		}
 
-		// hls/で始まるリクエストはmovie.goのハンドラにリダイレクト
+		// hls/で始まるリクエストはmovie.goのハンドラにリダイレクト（これは現在無い仕様のはず）
 		if strings.HasPrefix(requestedPath, "hls/") {
 			internal.HandleMovieStreaming(resolvedFolders, &config, err404Tmpl)(w, r)
 			return
 		}
+
+		// .sfwで終わるリクエストはmovie.goのハンドラにリダイレクト
+		if strings.HasSuffix(strings.ToLower(requestedPath), ".swf") {
+			internal.HandleMovieStreaming(resolvedFolders, &config, err404Tmpl)(w, r)
+			return
+		}
+
 
 		// それ以外のすべてのリクエストはobject.goのハンドラに渡す
 		internal.HandleObjectRequest(resolvedFolders, &config, indexTmpl, folderTmpl, err404Tmpl)(w, r)

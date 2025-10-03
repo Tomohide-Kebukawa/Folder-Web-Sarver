@@ -1,11 +1,14 @@
 {
 	"config": {
-		"server": { "port": 9999 },
+		"server": { "port": 8080 },
 		"templates": {
-			"index": "./Templates/index.html",
-			"folder": "./Templates/folder.html",
-			"image": "./Templates/image.html",
-			"imageR2L": "./Templates/imageR2L.html"
+			"index":		"./Templates/index.html",
+			"folder":		"./Templates/folder.html",
+			"image":		"./Templates/image.html",
+			"imageR2L":		"./Templates/imageR2L.html",
+            "image360VR":	"./Templates/image360VR.html",
+            "movie":		"./Templates/movie.html",
+            "404":			"./Templates/404.html"
 		}
 	},
 	"folders": [

@@ -109,7 +109,7 @@ func HandleMovieStreaming(resolvedFolders map[string]string, config *ServerConfi
 		// リクエストパスの取り出し
 		requestedPath := getRequestedPath(r)
 		
-		log.Printf("Movie: リクエスト受取: '%s'", requestedPath)
+//		log.Printf("Movie: リクエスト受取: '%s'", requestedPath)
 		
 		// リクエストされたファイルパスを得る
 		var fullPath string
@@ -128,10 +128,16 @@ func HandleMovieStreaming(resolvedFolders map[string]string, config *ServerConfi
 		// リクエストされたファイルの情報
 		fileInfo, fileErr := os.Stat(fullPath)
 
-		log.Printf("Movie: リクエストファイルパス: '%s'", requestedPath)
-		
+		// SWFは変換して送信			
+		if strings.HasSuffix(strings.ToLower(fullPath), ".swf") {
+			log.Printf("Movie: SWFファイルの送信: '%s'", fullPath)
+			HandleMovieFFmpeg(w, r, fullPath, config)
+			return
+		}
+
 		// ファイルが存在しないときは404を返す
 		if fileErr != nil || !fileInfo.Mode().IsRegular() || !IsMovieFile(fullPath) {
+			log.Printf("Movie: 404: '%s'", fullPath)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusNotFound)
 			err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
@@ -145,6 +151,15 @@ func HandleMovieStreaming(resolvedFolders map[string]string, config *ServerConfi
 			return
 		}
 
+		// webmはそのまま送信			
+		if strings.HasSuffix(strings.ToLower(fullPath), ".webm") {
+			log.Printf("Movie: webmファイルの送信: '%s'", fullPath)
+			http.ServeFile(w, r, fullPath)
+			return
+		}
+
+		// その他のファイルはMP4に変換して送信
+		log.Printf("Movie: MP4に変換して送信: '%s'", requestedPath)
 		HandleMovieFFmpeg(w, r, fullPath, config)
 			
 	}

@@ -13,6 +13,9 @@ import (
 	"sort"
 	"strings"
 	"regexp"
+	"strconv"
+	"bytes"		//エイリアス判定用
+	"os/exec"	//エイリアス判定用
 )
 
 // ResolvedFoldersを初期化するためのヘルパー関数
@@ -32,8 +35,13 @@ func ResolveFolders(folders []string) map[string]string {
 
 // isIgnoredは指定されたファイル名が無視リストに含まれているかどうかをチェックします。
 func isIgnored(name string, ignores []string) (bool, string) {
+	if name == "__option_R2L__" {
+		return true, "オプションファイル"
+	}
+	if name == "__option_360VR__" {
+		return true, "オプションファイル"
+	}
 	for _, pattern := range ignores {
-//		if matched, err := filepath.Match(pattern, name); err == nil && matched {
 		if matched, err := regexp.MatchString(pattern, name); err == nil && matched {
 			return true, fmt.Sprintf("パターン '%s' に一致しました", pattern)
 		}
@@ -51,7 +59,7 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 
 		// ルートパスの場合
 		if requestedPath == "" {
-			log.Printf("folder.go: ルートパスがリクエストされました")
+			log.Printf("Object: ルートパスがリクエストされました")
 			var entries []WS_FileEntry
 			for name := range resolvedFolders {
 				entries = append(entries, WS_FileEntry{
@@ -63,11 +71,12 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 				})
 			}
 			// フォルダとファイルをそれぞれソート
+//			sort.Slice(entries, func(i, j int) bool {
+//				return entries[i].WS_Name < entries[j].WS_Name
+//			})
 			sort.Slice(entries, func(i, j int) bool {
-				return entries[i].WS_Name < entries[j].WS_Name
-			})
-			sort.Slice(entries, func(i, j int) bool {
-				return entries[i].WS_Name < entries[j].WS_Name
+//				return entries[i].WS_Name < entries[j].WS_Name
+				return strings.ToLower(entries[i].WS_Name) < strings.ToLower(entries[j].WS_Name)
 			})
 			data := FolderData{
 				WS_Title:		"Web Server",
@@ -77,7 +86,7 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			if err := indexTmpl.Execute(w, data); err != nil {
-				log.Printf("テンプレートの実行に失敗しました: %v", err)
+				log.Printf("Object: テンプレートの実行に失敗しました: %v", err)
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.WriteHeader(http.StatusInternalServerError)
 				err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
@@ -99,15 +108,81 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 			
 			info, err := os.Stat(fullPath)
 			if err != nil || !info.IsDir() {
-				log.Printf("ファイルの送信: '%s'", fullPath)
-				http.ServeFile(w, r, fullPath)
+				isImage := isImageFile(fullPath)
+				resolvedAlias, errAlias:= resolveAlias(fullPath) // エイリアスのときはオリジナルのパスが返る
+				if isImage {
+					props, err := imageProperties(fullPath)
+					if err != nil {
+						log.Printf("Object: 画像のプロパティ取得に失敗しました: %v", err)
+						log.Printf("Object: イメージファイルを直接送信: '%s'", fullPath)
+						http.ServeFile(w, r, fullPath)
+					}
+					var width int
+					var height int
+					if value, ok := props["pixelWidth"]; ok {
+						width, _ = strconv.Atoi(value)
+					} else {
+						width = 0
+					}
+					if value, ok := props["pixelHeight"]; ok {
+						height, _ = strconv.Atoi(value)
+					} else {
+						height = 0
+					}
+					if width > 2000 || height > 2000 {
+						workFile, err := imageResize (fullPath, 2000, config)
+						if err != nil {
+							log.Println("Object: イメージの縮小に失敗:", err)
+							log.Printf("Object: イメージファイルの送信: '%s'", fullPath)
+							http.ServeFile(w, r, fullPath)
+						} else {							
+							log.Printf("Object: 縮小イメージファイルの送信: '%s'", fullPath)
+							http.ServeFile(w, r, workFile)
+							err = os.Remove(workFile)
+							if err != nil {
+								log.Println("Object: ファイル削除エラー:", err)
+							} else {
+								log.Println("Object: ファイル削除:", workFile)
+							}
+						}
+					} else {
+						log.Printf("Object: イメージファイルの送信: '%s'", fullPath)
+						http.ServeFile(w, r, fullPath)
+					}
+				} else if errAlias == nil {
+					// エイリアスファイルのときは、エイリアス先にリダイレクトする
+					log.Printf("Object: エイリアスファイル!! '%s'", resolvedAlias)
+					for _, prefix := range config.Folders {
+						if strings.HasPrefix(resolvedAlias, prefix) {
+							linkPath := resolvedAlias[len(prefix)+1:]+"/" // 一致した部分を削除して返す
+							parts := strings.Split(linkPath, "/")
+							for i := 2; i < len(parts); i++ {
+								if parts[i] != "" {
+									linkPath = "../" + linkPath // 有効なフォルダー階層の分だけ../に戻るようにする
+								}
+							}
+							log.Printf("Object: 編集されたパス '%s'", linkPath)
+							http.Redirect(w, r, linkPath, http.StatusSeeOther) // 301リダイレクトする
+							return 
+						}
+					}
+					// 公開されていないフォルダーへのエイリアスはダウンロードも許さない
+					log.Printf("Object: エイリアスファイルのためダウンロードできません: '%s' %v", fullPath, err)
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(http.StatusInternalServerError)
+					err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
+					return
+				} else {
+					log.Printf("Object: ファイルの送信: '%s'", fullPath)
+					http.ServeFile(w, r, fullPath)
+				}
 				return
 			}
 			
 			// フォルダの内容を読み込み
 			entries, err := os.ReadDir(fullPath)
 			if err != nil {
-				log.Printf("フォルダの読み込みに失敗しました: '%s' %v", fullPath, err)
+				log.Printf("Object: フォルダの読み込みに失敗しました: '%s' %v", fullPath, err)
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.WriteHeader(http.StatusInternalServerError)
 				err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
@@ -120,7 +195,7 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 			for _, entry := range entries {
 				ignored, reason := isIgnored(entry.Name(), config.Ignores)
 				if ignored {
-					log.Printf("Ignores Path: %s (Reason: %s)", filepath.Join(fullPath, entry.Name()), reason)
+					log.Printf("Object: 除外パス: '%s' (Reason: %s)", filepath.Join(fullPath, entry.Name()), reason)
 					continue
 				}
 				
@@ -156,18 +231,15 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 				}
 			}
 			
-			// フォルダとファイルをそれぞれソート
-			sort.Slice(dirList, func(i, j int) bool {
-				return dirList[i].WS_Name < dirList[j].WS_Name
-			})
-			sort.Slice(fileList, func(i, j int) bool {
-				return fileList[i].WS_Name < fileList[j].WS_Name
-			})
-			
 			// フォルダのリストとファイルのリストを結合
 			var combinedList []WS_FileEntry
 			combinedList = append(combinedList, dirList...)
 			combinedList = append(combinedList, fileList...)
+
+			// フォルダとファイルをまとめてソート
+			sort.Slice(combinedList, func(i, j int) bool {
+				return strings.ToLower(combinedList[i].WS_Name) < strings.ToLower(combinedList[j].WS_Name) //大文字小文字の区別なし
+			})
 
 			// 親フォルダのパスを生成
 			parentPath := ""
@@ -237,9 +309,17 @@ func getEntryPath(basePath, entryName string, isMovie, isImage bool) string {
 	return encodedEntryName
 }
 
+// エイリアス情報の取り出し
+func resolveAlias(path string) (string, error) {
+	cmd := exec.Command("./Libraries/resolveAlias", path) //自作コマンド
+	var out, stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 
-//// urlPathEscapeは、url.PathEscapeに頼らずに、ファイルパスのURLエスケープをします。
-//func urlPathEscape(path string) string {
-//	escapePath := strings.ReplaceAll(path, " ", "%20")
-//	escapePath = strings.ReplaceAll(path, "=", "%20")
-//}
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("Error: %s", strings.TrimSpace(stderr.String()))
+	}
+
+	return strings.TrimSpace(out.String()), nil
+}
