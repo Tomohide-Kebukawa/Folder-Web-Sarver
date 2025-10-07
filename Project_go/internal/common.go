@@ -62,6 +62,14 @@ type ImageData struct {
 	WS_ImageFile	string
 }
 
+// ImageDataは画像表示テンプレートに渡されるデータを定義します。
+type MarkdownData struct {
+	WS_Title		template.URL
+	WS_Link			template.URL
+	WS_BaseURL		template.URL
+	WS_Content		template.HTML
+}
+
 // VideoTemplateDataは動画表示テンプレートに渡されるデータを定義します。
 type VideoTemplateData struct {
 	WS_Title	string

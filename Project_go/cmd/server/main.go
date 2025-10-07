@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"Project_Server/internal"
+	"Project_go/internal"
 )
 
 func main() {
@@ -53,7 +53,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("movieテンプレートファイルのパースに失敗しました: %v", err)
 	}
-	// 404テンプレートを追加
+	// markdownテンプレートを追加
+	markdownTmpl, err := template.ParseFiles(config.Config.Templates["markdown"])
+	if err != nil {
+		log.Fatalf("mdテンプレートファイルのパースに失敗しました: %v", err)
+	}
 	err404Tmpl, err := template.ParseFiles("./templates/404.html")
 	if err != nil {
 		log.Fatalf("404テンプレートファイルのパースに失敗しました: %v", err)
@@ -100,6 +104,12 @@ func main() {
 		// .sfwで終わるリクエストはmovie.goのハンドラにリダイレクト
 		if strings.HasSuffix(strings.ToLower(requestedPath), ".swf") {
 			internal.HandleMovieStreaming(resolvedFolders, &config, err404Tmpl)(w, r)
+			return
+		}
+
+		// .mdで終わるリクエストはmovie.goのハンドラにリダイレクト
+		if strings.HasSuffix(strings.ToLower(requestedPath), ".md") {
+			internal.HandleMarkdownRequest(resolvedFolders, &config, markdownTmpl, err404Tmpl)(w, r)
 			return
 		}
 

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.WS_Title}}</title>
+    <style>
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #4CAF50;
+            text-decoration: none;
+            font-size: 1em;
+            transition: color 0.3s;
+        }
+        .back-link:hover {
+            color: #66BB6A;
+        }
+    </style>
+</head>
+<body>
+    <body>
+    {{.WS_Content}}
+    <a href="./#{{.WS_Title}}" class="back-link">← フォルダに戻る</a>
+</body>
+</html>
+

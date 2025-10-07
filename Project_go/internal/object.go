@@ -172,6 +172,43 @@ func HandleObjectRequest(resolvedFolders map[string]string, config *ServerConfig
 					w.WriteHeader(http.StatusInternalServerError)
 					err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
 					return
+//				} else if strings.HasSuffix(fullPath, ".md") {
+//					// mdファイルのとき
+//					// 1. ファイルの読み込み
+//					mdBytes, err := ioutil.ReadFile(fullPath)
+//					if err != nil {
+//						// ファイルが見つからない、または読み込めない場合
+//						log.Printf("Object: ファイルの読み込みに失敗しました: '%s' %v", fullPath, err)
+//						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+//						w.WriteHeader(http.StatusInternalServerError)
+//						err404Tmpl.Execute(w, NotFoundData{WS_Link: r.URL.Path})
+//						return
+//					}
+//					// 2. MarkdownをHTMLに変換
+//					log.Printf("Object: MDのHTML化: '%s'", fullPath)
+//					htmlContent := MarkdownToHTML(string(mdBytes))		
+//					// 3. レスポンスとしてクライアントに送り返す			
+//					// Content-Typeヘッダーを設定
+//					w.Header().Set("Content-Type", "text/html; charset=utf-8")				
+//					// シンプルなHTMLテンプレートを作成して、変換したコンテンツを挿入
+//					fullHTML := fmt.Sprintf(`
+//<!DOCTYPE html>
+//<html>
+//<head>
+//    <meta charset="UTF-8">
+//    <title>%s Rendered</title>
+//</head>
+//<body>
+//%s
+//<div>
+//<a href="./">フォルダーに戻る</a>
+//</div>
+//</body>
+//</html>`, fullPath, htmlContent)
+//					// HTMLを書き込む
+//					w.WriteHeader(http.StatusOK)
+//					w.Write([]byte(fullHTML))
+//					log.Printf("Object: HTML化したMDの送信: '%s'", fullPath)
 				} else {
 					log.Printf("Object: ファイルの送信: '%s'", fullPath)
 					http.ServeFile(w, r, fullPath)

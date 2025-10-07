@@ -8,8 +8,10 @@
 			"imageR2L":		"./Templates/imageR2L.html",
             "image360VR":	"./Templates/image360VR.html",
             "movie":		"./Templates/movie.html",
+            "markdown":		"./Templates/markdown.html",
             "404":			"./Templates/404.html"
-		}
+		},
+		"temporary":	"/VolumeC/Temporary/"
 	},
 	"folders": [
 		"/VolumeA/Folder-1/",
